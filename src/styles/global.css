@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&family=Noto+Serif+KR:wght@400;500;600&display=swap');
+
+:root {
+  --surface: #fffdf8;
+  --panel: #f9f4ea;
+  --line: #e8dfd2;
+  --deep-text: #2f241a;
+  --muted: #7a6958;
+  --focus: #c09a6f;
+  --serif: 'Noto Serif KR', 'Times New Roman', Georgia, serif;
+  --sans: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  background: linear-gradient(180deg, #faf7f1 0%, #f3ece0 100%);
+  color: var(--deep-text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin: 0;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
