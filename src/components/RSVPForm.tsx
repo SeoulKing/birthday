@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { AttendanceStatus, RsvpFormValue } from '../data/invitationData'
-import { isFirebaseConfigured } from '../lib/firebase'
-import { submitRsvp } from '../services/invitationApi'
+import { isRsvpBackendConfigured, submitRsvp } from '../services/invitationApi'
 
 const defaultFormValue: RsvpFormValue = {
   name: '',
@@ -20,8 +19,8 @@ export default function RSVPForm() {
     event.preventDefault()
     setFeedbackMessage('')
 
-    if (!isFirebaseConfigured) {
-      setFeedbackMessage('Firebase 설정이 필요합니다. .env 파일을 확인해주세요.')
+    if (!isRsvpBackendConfigured) {
+      setFeedbackMessage('RSVP 저장 설정이 필요합니다. Firebase 또는 Google Sheets 웹훅을 확인해주세요.')
       return
     }
 
@@ -37,7 +36,7 @@ export default function RSVPForm() {
     }
   }
 
-  // Firebase Firestore에 RSVP 응답을 저장합니다.
+  // RSVP 응답을 Firebase와 Google Sheets(웹훅)로 저장합니다.
   return (
     <>
       <p className="section-kicker">RSVP</p>
@@ -96,13 +95,13 @@ export default function RSVPForm() {
           />
         </label>
 
-        <button className="solid-button" type="submit" disabled={isSubmitting || !isFirebaseConfigured}>
+        <button className="solid-button" type="submit" disabled={isSubmitting || !isRsvpBackendConfigured}>
           RSVP 제출하기
         </button>
       </form>
       {feedbackMessage ? <p className="feedback-message">{feedbackMessage}</p> : null}
-      {!isFirebaseConfigured ? (
-        <p className="helper-text">Firebase 환경변수를 설정하면 실제 서버 저장이 활성화됩니다.</p>
+      {!isRsvpBackendConfigured ? (
+        <p className="helper-text">Firebase 또는 Google Sheets 웹훅을 설정하면 실제 서버 저장이 활성화됩니다.</p>
       ) : null}
     </>
   )

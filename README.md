@@ -67,6 +67,54 @@ service cloud.firestore {
 기본 설정으로는 Secrets 없이 배포됩니다.  
 다른 Firebase 프로젝트를 쓸 때만 Actions Secrets를 설정해 오버라이드하면 됩니다.
 
+## Google Sheets 자동 기록 (RSVP)
+
+시트 편집 URL만으로는 브라우저에서 직접 쓰기가 불가능하므로, Google Apps Script 웹앱 URL을 한 번 연결해야 합니다.
+
+### 1) Apps Script 생성
+
+- 아래 시트 열기: [생일파티 참석여부](https://docs.google.com/spreadsheets/d/1IdJSZKy_gdAYb79ft2tJ82OTYEuo8vmElEgexk_67bE/edit?usp=sharing)
+- 상단 `확장 프로그램 > Apps Script`
+- 아래 코드 붙여넣기 후 저장
+
+```javascript
+function doPost(e) {
+  const sheet = SpreadsheetApp.openById('1IdJSZKy_gdAYb79ft2tJ82OTYEuo8vmElEgexk_67bE').getSheets()[0];
+  const data = JSON.parse(e.postData.contents || '{}');
+
+  sheet.appendRow([
+    new Date(),
+    data.name || '',
+    data.attendance || '',
+    data.companions || '',
+    data.message || '',
+    data.source || '',
+  ]);
+
+  return ContentService.createTextOutput(
+    JSON.stringify({ ok: true })
+  ).setMimeType(ContentService.MimeType.JSON);
+}
+```
+
+### 2) 웹앱 배포
+
+- `배포 > 새 배포`
+- 유형: `웹 앱`
+- 실행 사용자: `나`
+- 액세스: `모든 사용자`
+- 배포 후 `https://script.google.com/macros/s/.../exec` URL 복사
+
+### 3) 프로젝트에 웹훅 URL 입력
+
+`.env`에 아래 값 추가:
+
+```env
+VITE_GOOGLE_SHEETS_WEBHOOK_URL=https://script.google.com/macros/s/xxxx/exec
+```
+
+이후 RSVP 제출 시 Firestore 저장과 함께 Google Sheets에도 자동 추가됩니다.
+
 ## 주요 구조
 
 ```text

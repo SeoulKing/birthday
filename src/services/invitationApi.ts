@@ -28,6 +28,13 @@ export interface GuestbookEntry {
   createdAt: number
 }
 
+const defaultGoogleSheetsWebhookUrl =
+  'https://script.google.com/macros/s/AKfycbyPeMq4g7xoGWK1Z_8yTe3Pqn3xtY7YGQN5JkrHe8UVr6cTKOdhMv0hVzzb8AXv9AaE1g/exec'
+const googleSheetsWebhookUrl =
+  (import.meta.env.VITE_GOOGLE_SHEETS_WEBHOOK_URL || defaultGoogleSheetsWebhookUrl).trim()
+
+export const isRsvpBackendConfigured = Boolean(db) || Boolean(googleSheetsWebhookUrl)
+
 function getFirestoreOrThrow() {
   if (!db) {
     throw new Error('Firebase is not configured.')
@@ -35,12 +42,48 @@ function getFirestoreOrThrow() {
   return db
 }
 
-export async function submitRsvp(payload: RsvpPayload) {
-  const firestore = getFirestoreOrThrow()
-  await addDoc(collection(firestore, 'rsvps'), {
+async function submitRsvpToGoogleSheets(payload: RsvpPayload) {
+  if (!googleSheetsWebhookUrl) {
+    return
+  }
+
+  const body = JSON.stringify({
     ...payload,
-    createdAt: Date.now(),
+    submittedAt: new Date().toISOString(),
+    source: typeof window !== 'undefined' ? window.location.href : 'unknown',
   })
+
+  await fetch(googleSheetsWebhookUrl, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8',
+    },
+    body,
+  })
+}
+
+export async function submitRsvp(payload: RsvpPayload) {
+  if (!isRsvpBackendConfigured) {
+    throw new Error('No RSVP backend is configured.')
+  }
+
+  const writeTasks: Promise<unknown>[] = []
+
+  if (db) {
+    writeTasks.push(
+      addDoc(collection(db, 'rsvps'), {
+        ...payload,
+        createdAt: Date.now(),
+      }),
+    )
+  }
+
+  if (googleSheetsWebhookUrl) {
+    writeTasks.push(submitRsvpToGoogleSheets(payload))
+  }
+
+  await Promise.all(writeTasks)
 }
 
 export async function submitGuestbookMessage(payload: GuestbookPayload) {

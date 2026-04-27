@@ -36,15 +36,13 @@ export default function Guestbook({ messages }: GuestbookProps) {
   }, [])
 
   const visibleMessages = useMemo(() => {
-    if (liveMessages.length > 0) {
-      return liveMessages
-    }
-    return messages.map((message) => ({
-      id: String(message.id),
+    const sampleMessages = messages.map((message) => ({
+      id: `sample-${message.id}`,
       author: message.author,
       text: message.text,
       createdAt: 0,
     }))
+    return [...liveMessages, ...sampleMessages]
   }, [liveMessages, messages])
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
