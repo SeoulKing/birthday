@@ -16,6 +16,57 @@ npm run dev
 npm run build
 ```
 
+## Firebase 연결 (RSVP / 방명록 실사용)
+
+이 프로젝트는 Firestore를 사용해 RSVP와 축하 메시지를 실제 저장합니다.
+
+### 1) Firebase 프로젝트 준비
+
+- Firebase Console에서 프로젝트 생성
+- Firestore Database 생성 (Production 또는 Test 모드 선택)
+- 웹 앱 추가 후 SDK config 값 확보
+
+### 2) 환경변수 설정 (선택)
+
+현재 저장소에는 Firebase 공개 설정값이 기본 내장되어 있어서, 별도 설정 없이 바로 동작합니다.
+프로젝트를 다른 Firebase로 바꾸고 싶을 때만 `.env`를 사용하세요.
+
+```powershell
+Copy-Item .env.example .env
+```
+
+```env
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+```
+
+### 3) Firestore 규칙 예시 (개발용)
+
+아래는 빠른 테스트용 예시입니다. 배포 시에는 보안 규칙을 더 엄격하게 설정하세요.
+
+```txt
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /rsvps/{document=**} {
+      allow read, write: if true;
+    }
+    match /guestbookMessages/{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+```
+
+### 4) GitHub Pages 배포 시 Secrets
+
+기본 설정으로는 Secrets 없이 배포됩니다.  
+다른 Firebase 프로젝트를 쓸 때만 Actions Secrets를 설정해 오버라이드하면 됩니다.
+
 ## 주요 구조
 
 ```text

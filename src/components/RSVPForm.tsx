@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { AttendanceStatus, RsvpFormValue } from '../data/invitationData'
-
-const RSVP_STORAGE_KEY = 'birthday-invitation-rsvp-responses'
+import { isFirebaseConfigured } from '../lib/firebase'
+import { submitRsvp } from '../services/invitationApi'
 
 const defaultFormValue: RsvpFormValue = {
   name: '',
@@ -13,39 +13,31 @@ const defaultFormValue: RsvpFormValue = {
 
 export default function RSVPForm() {
   const [formValue, setFormValue] = useState<RsvpFormValue>(defaultFormValue)
-  const [savedResponses, setSavedResponses] = useState<RsvpFormValue[]>([])
   const [feedbackMessage, setFeedbackMessage] = useState('')
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(RSVP_STORAGE_KEY)
-      if (!saved) {
-        return
-      }
-      const parsed = JSON.parse(saved) as RsvpFormValue[]
-      setSavedResponses(parsed)
-    } catch {
-      setSavedResponses([])
-    }
-  }, [])
-
-  const persistRsvpResponse = async (response: RsvpFormValue) => {
-    // TODO: Firebase 또는 Google Form 전송 로직으로 교체하세요.
-    setSavedResponses((prev) => {
-      const next = [...prev, response]
-      localStorage.setItem(RSVP_STORAGE_KEY, JSON.stringify(next))
-      return next
-    })
-  }
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    await persistRsvpResponse(formValue)
-    setFeedbackMessage('응답이 저장되었습니다. 감사합니다!')
-    setFormValue(defaultFormValue)
+    setFeedbackMessage('')
+
+    if (!isFirebaseConfigured) {
+      setFeedbackMessage('Firebase 설정이 필요합니다. .env 파일을 확인해주세요.')
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      await submitRsvp(formValue)
+      setFeedbackMessage('응답이 저장되었습니다. 감사합니다!')
+      setFormValue(defaultFormValue)
+    } catch {
+      setFeedbackMessage('저장에 실패했습니다. 잠시 후 다시 시도해주세요.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  // 서버 없이 동작하며 localStorage에 저장되어 새로고침 후에도 유지됩니다.
+  // Firebase Firestore에 RSVP 응답을 저장합니다.
   return (
     <>
       <p className="section-kicker">RSVP</p>
@@ -104,12 +96,14 @@ export default function RSVPForm() {
           />
         </label>
 
-        <button className="solid-button" type="submit">
+        <button className="solid-button" type="submit" disabled={isSubmitting || !isFirebaseConfigured}>
           RSVP 제출하기
         </button>
       </form>
       {feedbackMessage ? <p className="feedback-message">{feedbackMessage}</p> : null}
-      <p className="helper-text">현재 저장된 응답 수: {savedResponses.length}</p>
+      {!isFirebaseConfigured ? (
+        <p className="helper-text">Firebase 환경변수를 설정하면 실제 서버 저장이 활성화됩니다.</p>
+      ) : null}
     </>
   )
 }
